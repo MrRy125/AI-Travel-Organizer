@@ -1,10 +1,12 @@
 import './App.css'
+import Hero from './components/custom/Hero'
 
 function App() {
 
   return (
     <>
-     <h1>Welcome to Travel Organizer</h1>
+     {/* Hero */}
+     <Hero />
     </>
   )
 }
