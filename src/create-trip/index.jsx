@@ -1,89 +1,126 @@
-// import React from 'react'
-import { Input } from "@/components/ui/input";
-import LocationAutocomplete from "./LocationAutocomplete"
-import { useEffect, useState} from 'react';
-import { AI_PROMPT, SelectBudgetOptions, SelectTravelLists } from "@/constants/options";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from 'react';
+import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AI_PROMPT, SelectBudgetOptions, SelectTravelLists } from '@/constants/options';
+import { Toaster } from "@/components/ui/toaster"
+import { useToast as toast } from "@/hooks/use-toast";
+import { FcGoogle } from "react-icons/fc";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { chatSession } from "@/service/AIModal";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader
+  DialogHeader,
 } from "@/components/ui/dialog"
-
-import { FcGoogle } from "react-icons/fc";
-import { useGoogleLogin } from "@react-oauth/google";
-import * as axios from "axios";
+import { useGoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
+import { doc, setDoc } from "firebase/firestore";
+import { db } from '@/service/firebase.config';
+import { useNavigate } from 'react-router-dom';
+import Customloading from '@/components/custom/Customloading';
 
 
 
 function CreateTrip() {
+  const [cusloading, setcusLoading] = useState(false);
+  const [place, setPlace] = useState(null);
+  const [formData, setFormData] = useState({});
+  const [openDialog, setOpenDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const { toast } = useToast()
-
-  const [place, setPlace] = useState(null); // Define place here
-  const [openDialog, setOpenDialog]=useState(false);
-  const [formData, setFormData] = useState([]);
-
-  const handleInputChange = (name, value) =>{
+  // Function to handle form input changes and update state
+  const handleInputChange = (name, value) => {
     setFormData({
       ...formData,
-      [name]:value
-    })
-  }
+      [name]: value
+    });
+    // Save form data to localStorage
+    localStorage.setItem('tripFormData', JSON.stringify({
+      ...formData,
+      [name]: value
+    }));
+  };
 
-  useEffect(()=>{
-    console.log(formData)
-  }, [formData])
+  useEffect(() => {
+    // Check if form data is saved in localStorage, and if so, populate the form
+    const savedFormData = localStorage.getItem('tripFormData');
+    if (savedFormData) {
+      setFormData(JSON.parse(savedFormData));
+    }
+  }, []);
 
   const login = useGoogleLogin({
-    onSuccess:(codeResp)=>GetUserProfile(codeResp),
-  })
+    onSuccess: (codeResp) => GetUserProfile(codeResp),
+    onError: (error) => console.log(error)
+  });
 
-  const OnGenerateTrip = async () => {
-
-    const user=localStorage.getItem('user');
-    
-    if(!user){
+  const onGenerateTrip = async () => {
+    const user = localStorage.getItem('user');
+    if (!user) {
       setOpenDialog(true);
-      return ;
+      return;
     }
 
-    if(formData?.noOfDays>5 && !formData?.location || !formData?.budget || !formData?.traveler){
-      toast({
-        title: "Warning",
-        description: "Please Fill All The Details.",
-      })
-      return ;
+    if (formData?.noOfDays > 5 && !formData?.location || !formData?.budget || !formData?.traveler) {
+      toast("Please fill all details!");
+      return;
     }
+
+    setLoading(true);
+    setcusLoading(true);
     const FINAL_PROMPT = AI_PROMPT
-      .replace("{location}", formData?.location?.label)
-      .replace("{totalDays}", formData?.noOfDays)
-      .replace("{traveler}", formData?.traveler)
-      .replace("{budget}", formData?.budget)
-      .replace("{totalDays}", formData?.noOfDays)
+      .replace('{location}', formData?.location?.label)
+      .replace('{totalDays}', formData?.noOfDays)
+      .replace('{traveler}', formData?.traveler)
+      .replace('{budget}', formData?.budget)
+      .replace('{totalDays}', formData?.noOfDays);
+      console.log(FINAL_PROMPT);
+    try {
+      const result = await chatSession.sendMessage(FINAL_PROMPT);
+      saveAITrip(result.response.text());
+      console.log(result?.response?.text());
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      toast("Error generating trip. Please try again.");
+    }
+  };
 
-    console.log(FINAL_PROMPT);
-
-    const result=await chatSession.sendMessage(FINAL_PROMPT);
-    console.log(result?.response?.text());
-  }
+  const saveAITrip = async (TripData) => {
+    setLoading(true);
+    setcusLoading(true);
+    const docId = Date.now().toString();
+    const user = JSON.parse(localStorage.getItem('user'));
+    await setDoc(doc(db, "AITrips", docId), {
+      userSelection: formData,
+      TripData: JSON.parse(TripData),
+      userEmail: user?.email,
+      id: docId
+    });
+    setcusLoading(false);
+    setLoading(false);
+    navigate('/view-trip/' + docId);
+  };
 
   const GetUserProfile = (tokenInfo) => {
-    axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?.acess_token=${tokenInfo?.access_token}`, {
+    axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenInfo.access_token}`, {
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${tokenInfo?.access_token}`
+        Authorization: `Bearer ${tokenInfo?.access_token}`,
+        Accept: 'Application/json'
       }
-    }).then((resp)=>{
+    }).then((resp) => {
       console.log(resp);
       localStorage.setItem('user', JSON.stringify(resp.data));
-      setOpenDialog(false);
-      OnGenerateTrip();
-    })
-  }
+      // Retrieve form data after login
+      const savedFormData = localStorage.getItem('tripFormData');
+      if (savedFormData) {
+        setFormData(JSON.parse(savedFormData));
+      }
+      window.location.reload(); // Reload the page after login
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -106,15 +143,24 @@ function CreateTrip() {
               <h2 className="text-2xl font-semibold text-gray-900 mb-6">
                 Where would you like to go?
               </h2>
-              <LocationAutocomplete
-                selectProps={{
-                  place,
-                  onChange: (v) => {
-                    setPlace(v);
-                    handleInputChange('location', v);
-                  }
-                }}
-              />
+              <GooglePlacesAutocomplete
+              apiKey={import.meta.env.VITE_GOOGLE_PLACE_API_KEY}
+              selectProps={{
+                place,
+                onChange: (v) => { setPlace(v); handleInputChange('location', v) },
+                styles: {
+                  control: (provided) => ({
+                    ...provided,
+                    borderRadius: '0.5rem',
+                    border: '2px solid #000',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      border: '2px solid #805ad5',
+                    },
+                  }),
+                },
+              }}
+            />
             </div>
 
             {/* Duration Section */}
@@ -125,7 +171,7 @@ function CreateTrip() {
               <Input
                 placeholder="Number of days"
                 type="number"
-                className="max-w-xlg text-lg py-6"
+                className="max-w-xlg text-lg py-6 border-b border-gray-500"
                 onChange={(e) => handleInputChange('noOfDays', e.target.value)}
               />
             </div>
@@ -143,8 +189,8 @@ function CreateTrip() {
                   <div
                     key={index}
                     onClick={() => handleInputChange('budget', item.title)}
-                    className={`relative group bg-white rounded-xl border border-gray-200 p-6 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-blue-200 hover:scale-[1.02]
-                    ${formData?.budget==item.title&&'shadow-lg border-blue-200'}
+                    className={`relative group bg-white rounded-xl border  p-6 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-blue-600 hover:scale-[1.02]
+                    ${formData?.budget==item.title&&'shadow-lg border-5 border-black scale-[1.05]'}
                     `}
                   >
                     <div className="text-5xl mb-4 text-blue-500">{item.icon}</div>
@@ -170,8 +216,8 @@ function CreateTrip() {
                   <div
                     key={index}
                     onClick={() => handleInputChange('traveler', item.numberOfPeople)}
-                    className={`relative group bg-white rounded-xl border border-gray-200 p-6 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-blue-200 hover:scale-[1.02]
-                    ${formData?.traveler==item.numberOfPeople&&'shadow-lg border-blue-200'}`
+                    className={`relative group bg-white rounded-xl border  p-6 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-blue-600 hover:scale-[1.02]
+                    ${formData?.traveler==item.numberOfPeople&&'shadow-lg border-5 border-black scale-[1.05]'}`
                     }
                   >
                     <div className="text-5xl mb-4 text-blue-500">{item.icon}</div>
@@ -187,11 +233,17 @@ function CreateTrip() {
 
           {/* Generate Button */}
           <div className="flex justify-end pt-8">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg rounded-xl font-semibold transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-              onClick={OnGenerateTrip}
-            >
-              Generate Your Trip
-            </Button>
+            <Button
+                disabled={loading}
+                onClick={onGenerateTrip}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg rounded-xl font-semibold transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+              >
+                {loading ? (
+                  <AiOutlineLoading3Quarters className="h-6 w-6 animate-spin" />
+                ) : (
+                  'Generate Your Trip'
+                )}
+              </Button>
           </div>
 
           <Dialog open={openDialog}>
@@ -214,6 +266,8 @@ function CreateTrip() {
             </DialogContent>
           </Dialog>
 
+          <Customloading cusloading={cusloading} />
+          <Toaster position="bottom-center" />
         </div>
       </div>
     </div>
