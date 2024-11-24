@@ -19,7 +19,7 @@ import axios from 'axios';
 import { doc, setDoc } from "firebase/firestore";
 import { db } from '@/service/firebase.config';
 import { useNavigate } from 'react-router-dom';
-import Customloading from '@/components/custom/Customloading';
+import Customloading from '@/components/custom/Loading';
 
 
 
