@@ -1,15 +1,7 @@
 /* eslint-disable react/prop-types */
-/* eslint-disable no-unused-vars */
 import {
     AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
     AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
 function Customloading({ cusloading }) {
