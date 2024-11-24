@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-import { GetPlaceDetails } from "@/service/GlobalApi";
+import { GetPlaceDetails } from "@/service/GetPlaceDetails";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { IoIosSend } from "react-icons/io";

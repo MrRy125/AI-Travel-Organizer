@@ -4,7 +4,7 @@
 
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { GetPlaceDetails } from "@/service/GlobalApi";
+import { GetPlaceDetails } from "@/service/GetPlaceDetails";
 
 const HotelCardItem = ({ hotel }) => {
 
