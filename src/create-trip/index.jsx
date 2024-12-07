@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AI_PROMPT, SelectBudgetOptions, SelectTravelLists } from '@/constants/options';
 import { Toaster } from "@/components/ui/toaster"
-import { useToast as toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { FcGoogle } from "react-icons/fc";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { chatSession } from "@/service/AIModal";
@@ -30,6 +30,7 @@ function CreateTrip() {
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Function to handle form input changes and update state
   const handleInputChange = (name, value) => {
@@ -63,12 +64,27 @@ function CreateTrip() {
       setOpenDialog(true);
       return;
     }
-
-    if (formData?.noOfDays > 5 && !formData?.location || !formData?.budget || !formData?.traveler) {
-      toast("Please fill all details!");
+  
+    if (formData?.noOfDays > 5) {
+      toast({
+        title: "Too many days!",
+        description: "The number of days should not exceed 5.",
+        status: "error",
+      });
+      alert("The number of days should not exceed 5.");
       return;
     }
-
+  
+    if (!formData?.location && !formData?.budget && !formData?.traveler && formData?.noOfDays) {
+      toast({
+        title: "Incomplete Details",
+        description: "Please fill in all the details to proceed.",
+        status: "warning",
+      });
+      alert("Please fill all details!");
+      return;
+    }
+  
     setLoading(true);
     setcusLoading(true);
     const FINAL_PROMPT = AI_PROMPT
@@ -77,7 +93,8 @@ function CreateTrip() {
       .replace('{traveler}', formData?.traveler)
       .replace('{budget}', formData?.budget)
       .replace('{totalDays}', formData?.noOfDays);
-      console.log(FINAL_PROMPT);
+    console.log(FINAL_PROMPT);
+    
     try {
       const result = await chatSession.sendMessage(FINAL_PROMPT);
       saveAITrip(result.response.text());
@@ -87,6 +104,7 @@ function CreateTrip() {
       toast("Error generating trip. Please try again.");
     }
   };
+  
 
   const saveAITrip = async (TripData) => {
     setLoading(true);
