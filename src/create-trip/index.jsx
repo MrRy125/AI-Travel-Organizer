@@ -65,23 +65,28 @@ function CreateTrip() {
       return;
     }
   
+    if (
+      !formData?.location ||
+      !formData?.budget ||
+      !formData?.traveler ||
+      formData?.noOfDays === undefined ||
+      formData?.noOfDays === ""
+    ) {
+      toast({
+        title: "Incomplete Details",
+        description: "Please fill in all the details to proceed.",
+        status: "warning",
+      });
+      return;
+    }
+    
+
     if (formData?.noOfDays > 5) {
       toast({
         title: "Too many days!",
         description: "The number of days should not exceed 5.",
         status: "error",
       });
-      alert("The number of days should not exceed 5.");
-      return;
-    }
-  
-    if (!formData?.location && !formData?.budget && !formData?.traveler && formData?.noOfDays) {
-      toast({
-        title: "Incomplete Details",
-        description: "Please fill in all the details to proceed.",
-        status: "warning",
-      });
-      alert("Please fill all details!");
       return;
     }
   
