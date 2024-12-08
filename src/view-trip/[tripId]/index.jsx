@@ -28,6 +28,7 @@ const ViewTrip = () => {
   };
   useEffect(() => {
     GetTripData();
+    console.log(trip)
   }, [tripId]);
 
   return (
