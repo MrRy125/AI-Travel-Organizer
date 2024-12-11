@@ -1,34 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-unused-vars */
-/* eslint-disable react/prop-types */
-import { GetPlaceDetails } from "@/service/GetPlaceDetails";
-import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
-import { IoIosSend } from "react-icons/io";
-
 const InfoSection = ({ trip }) => {
-
-  const [photoUrl, setPhotoUrl] = useState();
-
-  useEffect(() => {
-    trip&&GetPlacePhoto();
-  }, [trip]);
-
-  const GetPlacePhoto = async () => {
-    const data = {
-      textQuery: trip?.userSelection?.location?.label,
-    };
-
-    const result = await GetPlaceDetails(data).then((resp) => {
-      console.log(resp.data);
-
-    //   const PhotoUrl = PHOTO_REF_URL.replace(
-    //     "{NAME}",
-    //     resp.data.places[0].photos[3].name
-    //   );
-    //   setPhotoUrl(PhotoUrl);
-    });
-  };
   return (
     <div>
       <img

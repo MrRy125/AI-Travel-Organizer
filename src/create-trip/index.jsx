@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/hooks/use-toast";
 import { FcGoogle } from "react-icons/fc";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { chatSession } from "@/service/AIModal";
+import { chatSession } from "@/service/AIModel";
 import {
   Dialog,
   DialogContent,

@@ -1,36 +1,6 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-unused-vars */
-/* eslint-disable react/prop-types */
-
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { GetPlaceDetails } from "@/service/GetPlaceDetails";
 
 const HotelCardItem = ({ hotel }) => {
-
-    const PHOTO_REF_URL =
-  "https://places.googleapis.com/v1/{NAME}/media?maxHeightPx=600&maxWidthPx=600&key=" +
-  import.meta.env.VITE_GOOGLE_PLACE_API_KEY;
-  const [photoUrl, setPhotoUrl] = useState();
-  useEffect(() => {
-    hotel && GetPlacePhoto();
-  }, [hotel]);
-
-  const GetPlacePhoto = async () => {
-    const data = {
-      textQuery: hotel?.userSelection?.location?.label,
-    };
-
-    const result = await GetPlaceDetails(data).then((resp) => {
-      console.log(resp.data.places[0].photos[3].name);
-
-      const PhotoUrl = PHOTO_REF_URL.replace(
-        "{NAME}",
-        resp.data.places[0].photos[3].name
-      );
-      setPhotoUrl(PhotoUrl);
-    });
-  };
   return (
     <Link
       to={
